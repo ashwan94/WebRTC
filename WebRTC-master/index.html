@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
+    />
+    <title>샐러던트들의 커뮤니티 - 한석줍쇼</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/main.css" />
+    <link
+      rel="apple-touch-icon"
+      sizes="57x57"
+      href="/favicon/apple-icon-57x57.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="60x60"
+      href="/favicon/apple-icon-60x60.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="72x72"
+      href="/favicon/apple-icon-72x72.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="/favicon/apple-icon-76x76.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="114x114"
+      href="/favicon/apple-icon-114x114.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/favicon/apple-icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="/favicon/apple-icon-144x144.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/favicon/apple-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/favicon/apple-icon-180x180.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/favicon/android-icon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="96x96"
+      href="/favicon/favicon-96x96.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/favicon/favicon-16x16.png"
+    />
+  </head>
+
+  <body>
+    <div style="background-color: #212426">
+      <div
+        style="background-color: #383838"
+        class="grid grid-cols-3 pt-5 pb-3 mb-10"
+      >
+        <div>
+          <img src="/images/Hansukjupshow_logo.png" class="w-20 ms-7" />
+        </div>
+        <div class="text-center text-white mt-2" id="userNickName">참가자</div>
+      </div>
+      <h1 class="text-center text-4xl my-20 text-white" id="boardTitle"></h1>
+      <div class="flex justify-center items-center mb-16">
+        <div class="grid grid-cols-2">
+          <video id="localVideo" autoplay muted playsinline></video>
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+      </div>
+      <div style="background-color: #383838" class="grid grid-cols-3 pb-14">
+        <div class="text-center mt-11">
+          <button id="videoToggle" style="margin-right: 3%">
+            <img
+              src="/images/chat/cam_on.png"
+              id="videoImg"
+              alt="비디오 켜짐"
+              class="w-8"
+            />
+          </button>
+          <button id="audioToggle">
+            <img
+              src="/images/chat/mic_on.png"
+              id="audioImg"
+              alt="마이크 켜짐"
+              class="w-8"
+            />
+          </button>
+        </div>
+        <div class="text-center mt-8">
+          <button
+            id="goExit"
+            class="font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white w-20 h-10 rounded mt-3"
+          >
+            종료
+          </button>
+        </div>
+        <div class="text-center mt-14 text-white"></div>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+  <script>
+    // URL 의 query string 가져오기
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+
+    // 참가자
+    const nickName = urlParams.get("nickName");
+    const userNickNameEl = document.querySelector("#userNickName");
+    userNickNameEl.innerText = nickName + " 님의 하브루타";
+
+    const boardTitle = urlParams.get("boardTitle");
+    const boardTitleEl = document.querySelector("#boardTitle");
+    boardTitleEl.innerText = boardTitle;
+
+    const podcastBoardNo = urlParams.get("podcastBoardNo");
+
+    // 화상채팅 종료하기
+    const goExitBtn = document.querySelector("#goExit");
+    goExitBtn.addEventListener("click", function () {
+      if (confirm("채팅을 종료하시겠습니까?")) {
+        location.href = `http://nextit.or.kr:23124?onair=FINISH&podcastBoardNo=${podcastBoardNo}`;
+      }
+    });
+
+    // 웹캠 toggle
+    const videoToggleBtn = document.querySelector("#videoToggle");
+    const videoImgEl = document.querySelector("#videoImg");
+    videoToggleBtn.addEventListener("click", toggleVideo);
+    function toggleVideo() {
+      if (localStream) {
+        const videoTracks = localStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+          const videoTrack = videoTracks[0];
+          if (videoTrack.enabled) {
+            videoTrack.enabled = false;
+            videoImgEl.src = "/images/chat/cam_off.png";
+          } else {
+            videoTrack.enabled = true;
+            videoImgEl.src = "/images/chat/cam_on.png";
+          }
+        }
+      }
+    }
+
+    // 오디오 toggle
+    const audioToggleBtn = document.querySelector("#audioToggle");
+    const audioImgEl = document.querySelector("#audioImg");
+    audioToggleBtn.addEventListener("click", toggleAudio);
+    function toggleAudio() {
+      if (localStream) {
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          const audioTrack = audioTracks[0];
+          if (audioTrack.enabled) {
+            audioTrack.enabled = false;
+            audioImgEl.src = "/images/chat/mic_off.png";
+          } else {
+            audioTrack.enabled = true;
+            audioImgEl.src = "/images/chat/mic_on.png";
+          }
+        }
+      }
+    }
+  </script>
+</html>
